@@ -3,7 +3,9 @@ use crate::syntax::*;
 
 pub struct Parser {
     chars: Box<[char]>,
-    pub i: usize,
+    i: usize,
+    row: usize,
+    col: usize,
 }
 
 impl Parser {
@@ -11,21 +13,38 @@ impl Parser {
         Self {
             chars: buffer.chars().collect::<Vec<_>>().into(),
             i: 0,
+            row: 0,
+            col: 0,
         }
+    }
+
+    pub fn row(&self) -> usize {
+        self.row + 1
+    }
+
+    pub fn col(&self) -> usize {
+        self.col
     }
 
     // helper functions
 
     fn step(&mut self) {
         self.i += 1;
+        self.col += 1;
     }
 
     fn stepn(&mut self, n: usize) {
         self.i += n;
+        self.col += n;
     }
 
-    fn peek(&mut self) -> Result<&char> {
+    fn peek(&self) -> Result<&char> {
         self.chars.get(self.i).ok_or(EOF.into())
+    }
+
+    fn peekn(&self, n: usize) -> Result<String> {
+        Ok(self.chars.get(self.i..self.i + n).ok_or(EOF)?
+            .iter().collect::<String>())
     }
 
     fn next(&mut self) -> Result<&char> {
@@ -33,15 +52,13 @@ impl Parser {
         self.chars.get(self.i - 1).ok_or(EOF.into())
     }
 
-    fn expect(&mut self, ch: char) -> Result<()> {
-        if let Ok(next_ch) = self.next() {
-            if *next_ch != ch {
-                Err(ExpectedToken(ch.to_string()).into())
-            } else {
-                Ok(())
-            }
+    fn expect(&mut self, string: &str) -> Result<()> {
+        let len = string.len();
+        if self.peekn(len)? == string {
+            self.i += len;
+            Ok(())
         } else {
-            Err(EOF.into())
+            Err(ExpectedToken(string.to_string()).into())
         }
     }
 
@@ -64,9 +81,14 @@ impl Parser {
 
     fn skip_whitespace(&mut self) -> Result<()> {
         loop {
-            if let Ok(ch) = self.peek() {
+            // TODO fix retarded cloning?
+            if let Ok(ch) = self.peek().cloned() {
                 if ch.is_whitespace() {
                     self.step();
+                    if ch == '\n' {
+                        self.col = 0;
+                        self.row += 1;
+                    }
                 } else {
                     break Ok(())
                 }
@@ -113,8 +135,8 @@ impl Parser {
             OP_MUL => Mul,
             OP_DIV => Div,
             OP_POW => Pow,
-            OP_FIELD_ACCESS => FieldAccess,
-            OP_PAREN => Paren,
+            "." => FieldAccess,
+            "(" => Paren,
             _ => { return Err(InvalidOperator(op.to_string()).into()); }
         })
     }
@@ -128,6 +150,13 @@ impl Parser {
             self.read_string()?
         } else if LETTERS.contains(*ch) {
             Node::Identifier(self.read_identifier()?)
+        } else if *ch == '(' {
+            self.step();
+            let value = self.read_expression()?;
+            self.expect(")")?;
+            value
+        // } else if *ch == '{' {
+        //     self.read_block(true)?
         } else {
             return Err(UnexpectedCharacter(*ch).into());
         };
@@ -136,11 +165,32 @@ impl Parser {
             return Ok(value);
         }
 
-        if VALUE_EXTENSION_OPERATOR_CHARS.contains(*self.peek()?) {
-            todo!()
-        }
+        if let Ok(ch) = self.peek() { match ch {
+            '(' => {
+                self.step();
+                return Ok(Node::ParenArgs(Box::new(value), self.read_args()?));
+            }
+            _ => {}
+        }}
         
         Ok(value)
+    }
+
+    fn read_args(&mut self) -> Result<Vec<Node>> {
+        let _ = self.skip_whitespace();
+        let mut args = Vec::new();
+
+        loop {
+            args.push(self.read_expression()?);
+
+            match self.next()? {
+                ')' => { return Ok(args) }
+                ',' => {}
+                _ => { return Err(ExpectedTokens(&[",", ")"]).into()) }
+            }
+
+            let _ = self.skip_whitespace();
+        }
     }
 
     fn read_expression(&mut self) -> Result<Node> {
@@ -156,7 +206,10 @@ impl Parser {
 
             let ch = self.peek()?;
 
-            if OPERATOR_CHARS.contains(*ch) {
+            if EXPR_TERMINATORS.contains(*ch) {
+                break
+
+            } if OPERATOR_CHARS.contains(*ch) {
                 let op = self.read_operator()?;
 
                 self.skip_whitespace()?;
@@ -175,7 +228,8 @@ impl Parser {
                 for target_op in level.iter() {
                     for (i, op) in operators.clone().iter().enumerate() {
                         if op == target_op {
-                            let [a, b] = values.splice(i..=i+1, []).collect::<Vec<_>>().try_into().unwrap();
+                            let [a, b] = values.splice(i..=i+1, [])
+                                .collect::<Vec<_>>().try_into().unwrap();
                             let _ = operators.remove(i);
                             values.insert(i, Node::BinaryOp(Box::new(BinaryOp {
                                 op: *op,
@@ -198,12 +252,18 @@ impl Parser {
         let ident = self.read_identifier()?;
         self.skip_whitespace()?;
 
-        self.expect('=')?;
+        self.expect("=")?;
         self.skip_whitespace()?;
 
         let value = self.read_expression()?;
 
         Ok(Node::Statement(Statement::SetVariable(ident, Box::new(value))))
+    }
+
+    fn read_if(&mut self) -> Result<Node> {
+        let condition = self.read_expression()?;
+        let block = self.read_block(true)?;
+        Ok(Node::Statement(Statement::If(Box::new(condition), Box::new(block))))
     }
 
     fn read_statement(&mut self) -> Result<Node> {
@@ -219,6 +279,7 @@ impl Parser {
 
                     match potential_keyword {
                         KW_LET => return self.read_let(),
+                        KW_IF => return self.read_if(),
                         _ => {}
                     }
                 }
@@ -228,20 +289,61 @@ impl Parser {
         self.read_expression()
     }
 
+    fn read_block(&mut self, inner: bool) -> Result<Node> {
+        if inner {
+            self.expect("{")?;
+        }
+
+        let mut nodes = Vec::new();
+
+        if self.skip_whitespace().is_ok() {
+            loop {
+                nodes.push(self.read_statement()?);
+
+                if let Ok(ch) = self.next().cloned() {
+                    match ch {
+                        ';' => {}
+                        '\n' => {} // TODO improve?
+                        _ => {
+                            return Err(UnexpectedCharacter(ch).into())
+                        }
+                    }
+
+                } else {
+                    break
+                }
+
+                if self.skip_whitespace().is_err() {
+                    break
+
+                } else if inner {
+                    if let Ok(ch) = self.peek() {
+                        if *ch == '}' {
+                            self.step();
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+        return Ok(Node::Block(Block::new(nodes)))
+    }
+
     // parse the whole buffer
 
     pub fn parse(&mut self) -> Result<()> {
-        let mut stack = Vec::new();
-
-        stack.push(self.read_statement()?);
+        let block = self.read_block(false)?;
 
         if self.peek().is_ok() {
             panic!("Unread chars starting at index {}", self.i);
         }
 
-        println!("parsed result:");
-        for i in stack {
-            println!("{i}");
+        match block {
+            Node::Block(block) => {
+                println!("{}", block.format(0));
+            }
+            _ => unreachable!()
         }
 
         Ok(())

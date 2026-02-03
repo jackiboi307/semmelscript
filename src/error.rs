@@ -7,6 +7,7 @@ quick_error! {
         ExpectedTokens(tokens: &'static [&'static str]) {}
         InvalidOperator(op: String) {}
         UnexpectedCharacter(ch: char) {}
+        UnknownError(info: String) {}
         EOF {}
     }
 }

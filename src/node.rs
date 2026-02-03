@@ -1,10 +1,11 @@
 use crate::syntax::*;
-use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub enum Node {
     Expression(Box<Node>),
     Statement(Statement),
+    Block(Block),
+    ParenArgs(Box<Node>, Vec<Node>),
 
     // Operators
     BinaryOp(Box<BinaryOp>),
@@ -25,6 +26,12 @@ pub struct BinaryOp {
 #[derive(Debug, Clone)]
 pub enum Statement {
     SetVariable(String, Box<Node>),
+    If(Box<Node>, Box<Node>),
+}
+
+#[derive(Debug, Clone)]
+pub struct Block {
+    statements: Vec<Node>,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -41,37 +48,90 @@ pub enum Operator {
     Paren,
 }
 
-impl Display for Node {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Expression(node) => Display::fmt(node, f),
-            Self::Statement(statement) => statement.fmt(f),
-            Self::BinaryOp(bop) => write!(f, "({} {} {})", bop.a, bop.op, bop.b),
-            Self::Identifier(name) => write!(f, "{name}"),
-            Self::String(string) => write!(f, "\"{string}\""),
-            Self::Integer(int) => write!(f, "{int}"),
+pub trait Format {
+    fn format(&self, indent: usize) -> String;
+}
+
+impl Block {
+    pub fn new(statements: Vec<Node>) -> Self {
+        Self {
+            statements,
         }
     }
 }
 
-impl Display for Statement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Format for Block {
+    fn format(&self, indent: usize) -> String {
+        const INDENT: &'static str = "    ";
+
+        let indent_str = INDENT.repeat(indent);
+        let mut string = format!("{{\n");
+
+        for node in &self.statements {
+            match node {
+                Node::Block(block) => {
+                    string += &(indent_str.clone() + INDENT + &block.format(indent + 1));
+                }
+                _ => {
+                    string += &(indent_str.clone() + INDENT + &node.format(indent));
+                }
+            }
+
+            if string.chars().last().unwrap() != '}' {
+                string.push_str(";");
+            }
+
+            string.push_str("\n");
+        }
+
+        string += &*format!("{indent_str}}}");
+        string
+    }
+}
+
+impl Format for Node {
+    fn format(&self, indent: usize) -> String {
         match self {
-            Self::SetVariable(ident, value) => write!(f, "let {} = {}", ident, value),
+            Self::Expression(node) => node.format(indent),
+            Self::Statement(statement) => statement.format(indent),
+            Self::Block(block) => block.format(indent),
+            Self::ParenArgs(root, args) => {
+                let args_fmt: Vec<_> = args.iter().map(|node| node.format(indent)).collect();
+                format!("{}({})", root.format(indent), args_fmt.join(", "))
+            }
+            Self::BinaryOp(bop) => format!("({} {} {})",
+                bop.a.format(indent),
+                bop.op.format(indent),
+                bop.b.format(indent),
+            ),
+            Self::Identifier(name) => format!("{name}"),
+            Self::String(string) => format!("\"{string}\""),
+            Self::Integer(int) => format!("{int}"),
         }
     }
 }
 
-impl Display for Operator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
+impl Format for Statement {
+    fn format(&self, indent: usize) -> String {
+        match self {
+            Self::SetVariable(ident, value) =>
+                format!("let {} = {}", ident, value.format(indent)),
+            Self::If(condition, block) =>
+                format!("if {} {}", condition.format(indent), block.format(indent + 1)),
+        }
+    }
+}
+
+impl Format for Operator {
+    fn format(&self, _indent: usize) -> String {
+        format!("{}", match self {
             Self::Add => OP_ADD,
             Self::Sub => OP_SUB,
             Self::Mul => OP_MUL,
             Self::Div => OP_DIV,
             Self::Pow => OP_POW,
-            Self::FieldAccess => OP_FIELD_ACCESS,
-            Self::Paren => OP_PAREN,
+            Self::FieldAccess => ".",
+            Self::Paren => "(",
         })
     }
 }

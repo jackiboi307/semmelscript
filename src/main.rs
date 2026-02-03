@@ -14,6 +14,6 @@ fn main() {
     let mut parser = Parser::new(buffer);
 
     if let Err(err) = parser.parse() {
-        eprintln!("Error while parsing: {} (at index {})", err, parser.i + 1);
+        eprintln!("Error while parsing: {} ({}:{})", err, parser.row(), parser.col());
     }
 }
