@@ -272,17 +272,26 @@ impl Parser {
     fn read_if(&mut self) -> Result<Node> {
         let condition = self.read_expression()?;
         let block = self.read_block(true)?;
-        let ext = if let Some(kw) = self.read_keyword() {
+
+        let ext: Option<Box<Node>> = if let Some(kw) = self.read_keyword() {
             match kw {
                 Keyword::Else => Some(Box::new(self.read_block(true)?)),
-                /*Keyword::If => {
-                    
-                }*/
+                Keyword::If => {
+                    if let Some(kw) = self.read_keyword() {
+                        match kw {
+                            Keyword::Else => {
+                                Some(Box::new(self.read_if()?))
+                            }
+                            _ => { return Err(UnexpectedKeyword(kw).into()); }
+                        }
+                    } else { None }
+                }
                 _ => None
             }
         } else {
             None
         };
+
         Ok(Node::Statement(Statement::If(Box::new(condition), Box::new(block), ext)))
     }
 
@@ -319,7 +328,7 @@ impl Parser {
             }
         }
 
-        self.read_expression()
+        self.read_value()
     }
 
     fn read_block(&mut self, inner: bool) -> Result<Node> {

@@ -3,6 +3,11 @@ let var = x + (1 - 3^2) * 4;
 
 if var {
     print("var is true");
+
+} if else x {
+    print("x is true");
+
 } else {
-    print("var is not true");
+    print("var and x are false");
+
 }
