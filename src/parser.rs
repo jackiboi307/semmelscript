@@ -329,17 +329,11 @@ impl Parser {
             loop {
                 nodes.push(self.read_statement()?);
 
-                if let Ok(ch) = self.next().cloned() {
-                    match ch {
-                        ';' => {}
-                        '\n' => {} // TODO improve.
-                        _ => {
-                            return Err(UnexpectedCharacter(ch).into())
-                        }
+                match self.next()?.clone() {
+                    ';' => {}
+                    ch => {
+                        return Err(UnexpectedCharacter(ch).into())
                     }
-
-                } else {
-                    break
                 }
 
                 if self.skip_whitespace().is_err() {
