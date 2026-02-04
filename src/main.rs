@@ -1,10 +1,9 @@
-pub mod parser;
-pub mod node;
-pub mod syntax;
-pub mod error;
-pub mod prelude;
-
+mod parser;
 use parser::Parser;
+
+pub use quick_error::quick_error;
+
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() {
     let [_, file]: [String; 2] = std::env::args()

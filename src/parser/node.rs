@@ -1,8 +1,8 @@
-use crate::syntax::*;
+use super::Format;
+use super::tokens::*;
 
 #[derive(Debug, Clone)]
 pub enum Node {
-    Expression(Box<Node>),
     Statement(Statement),
     Block(Block),
     ParenArgs(Box<Node>, Vec<Node>),
@@ -32,36 +32,6 @@ pub enum Statement {
 #[derive(Debug, Clone)]
 pub struct Block {
     statements: Vec<Node>,
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum Operator {
-    // math
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Pow,
-    Mod,
-
-    // compare
-    Equal,
-    Inequal,
-    Less,
-    LessEqual,
-    Greater,
-    GreaterEqual,
-
-    // logic
-    And,
-    Or,
-
-    FieldAccess,
-    Paren,
-}
-
-pub trait Format {
-    fn format(&self, indent: usize) -> String;
 }
 
 impl Block {
@@ -104,7 +74,6 @@ impl Format for Block {
 impl Format for Node {
     fn format(&self, indent: usize) -> String {
         match self {
-            Self::Expression(node) => node.format(indent),
             Self::Statement(statement) => statement.format(indent),
             Self::Block(block) => block.format(indent),
             Self::ParenArgs(root, args) => {
@@ -141,28 +110,5 @@ impl Format for Statement {
                 fmt
             }
         }
-    }
-}
-
-impl Format for Operator {
-    fn format(&self, _indent: usize) -> String {
-        format!("{}", match self {
-            Self::Add => OP_ADD,
-            Self::Sub => OP_SUB,
-            Self::Mul => OP_MUL,
-            Self::Div => OP_DIV,
-            Self::Pow => OP_POW,
-            Self::Mod => OP_MOD,
-            Self::Equal => OP_EQUAL,
-            Self::Inequal => OP_INEQUAL,
-            Self::Less => OP_LESS,
-            Self::LessEqual => OP_LESSEQUAL,
-            Self::Greater => OP_GREATER,
-            Self::GreaterEqual => OP_GREATEREQUAL,
-            Self::And => OP_AND,
-            Self::Or => OP_OR,
-            Self::FieldAccess => ".",
-            Self::Paren => "(",
-        })
     }
 }

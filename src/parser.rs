@@ -1,5 +1,13 @@
-use crate::prelude::*;
-use crate::syntax::*;
+use crate::*;
+
+mod syntax;
+use syntax::*;
+
+mod node;
+use node::*;
+
+mod tokens;
+use tokens::*;
 
 pub struct Parser {
     chars: Box<[char]>,
@@ -8,14 +16,23 @@ pub struct Parser {
     col: usize,
 }
 
-// TODO create some tokens module, with this enum and Operator
+quick_error! {
+    #[derive(Debug)]
+    enum ParseError {
+        ExpectedToken(token: String) {}
+        ExpectedTokens(tokens: &'static [&'static str]) {}
+        InvalidOperator(op: String) {}
+        UnexpectedKeyword(keyword: Keyword) {}
+        UnexpectedCharacter(ch: char) {}
+        // CustomError(info: &'static str) {}
+        EOF {}
+    }
+}
 
-#[derive(Debug)]
-pub enum Keyword {
-    Let,
-    If,
-    Else,
-    Elif,
+use ParseError::*;
+
+pub trait Format {
+    fn format(&self, indent: usize) -> String;
 }
 
 impl Parser {
