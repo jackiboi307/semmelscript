@@ -7,7 +7,7 @@ pub mod prelude;
 use parser::Parser;
 
 fn main() {
-    let [_, file] = std::env::args()
+    let [_, file]: [String; 2] = std::env::args()
         .collect::<Vec<_>>().try_into().unwrap_or_else(|_| panic!("Expected 1 argument!"));
 
     let buffer = std::fs::read_to_string(&file).unwrap_or_else(|e| panic!("Could not read file {file}: {e}"));

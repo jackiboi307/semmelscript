@@ -8,6 +8,15 @@ pub struct Parser {
     col: usize,
 }
 
+// TODO create some tokens module, with this enum and Operator
+
+#[derive(Debug)]
+pub enum Keyword {
+    Let,
+    If,
+    Else,
+}
+
 impl Parser {
     pub fn new(buffer: String) -> Self {
         Self {
@@ -228,7 +237,7 @@ impl Parser {
                 for target_op in level.iter() {
                     for (i, op) in operators.clone().iter().enumerate() {
                         if op == target_op {
-                            let [a, b] = values.splice(i..=i+1, [])
+                            let [a, b]: [Node; 2] = values.splice(i..=i+1, [])
                                 .collect::<Vec<_>>().try_into().unwrap();
                             let _ = operators.remove(i);
                             values.insert(i, Node::BinaryOp(Box::new(BinaryOp {
@@ -263,10 +272,21 @@ impl Parser {
     fn read_if(&mut self) -> Result<Node> {
         let condition = self.read_expression()?;
         let block = self.read_block(true)?;
-        Ok(Node::Statement(Statement::If(Box::new(condition), Box::new(block))))
+        let ext = if let Some(kw) = self.read_keyword() {
+            match kw {
+                Keyword::Else => Some(Box::new(self.read_block(true)?)),
+                /*Keyword::If => {
+                    
+                }*/
+                _ => None
+            }
+        } else {
+            None
+        };
+        Ok(Node::Statement(Statement::If(Box::new(condition), Box::new(block), ext)))
     }
 
-    fn read_statement(&mut self) -> Result<Node> {
+    fn read_keyword(&mut self) -> Option<Keyword> {
         let potential_keyword = &*self.peek_from_chars(LOWERCASE_LETTERS);
 
         if !potential_keyword.is_empty() {
@@ -277,12 +297,25 @@ impl Parser {
                     let _ = self.next_from_chars(LOWERCASE_LETTERS);
                     let _ = self.skip_whitespace();
 
-                    match potential_keyword {
-                        KW_LET => return self.read_let(),
-                        KW_IF => return self.read_if(),
-                        _ => {}
-                    }
+                    return Some(match potential_keyword {
+                        KW_LET => Keyword::Let,
+                        KW_IF => Keyword::If,
+                        KW_ELSE => Keyword::Else,
+                    })
                 }
+            }
+
+        }
+
+        None
+    }
+
+    fn read_statement(&mut self) -> Result<Node> {
+        if let Some(keyword) = self.read_keyword() {
+            match keyword {
+                Keyword::Let => return self.read_let(),
+                Keyword::If => return self.read_if(),
+                _ => { return Err(UnexpectedKeyword(keyword).into()) }
             }
         }
 
@@ -326,6 +359,8 @@ impl Parser {
                 }
             }
         }
+
+        let _ = self.skip_whitespace();
 
         return Ok(Node::Block(Block::new(nodes)))
     }

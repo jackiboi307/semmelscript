@@ -1,5 +1,6 @@
 pub use crate::{
     node::*,
+    parser::Keyword,
     error::ParseError::*,
 };
 

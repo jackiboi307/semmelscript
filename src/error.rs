@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use quick_error::quick_error;
 
 quick_error! {
@@ -6,8 +7,9 @@ quick_error! {
         ExpectedToken(token: String) {}
         ExpectedTokens(tokens: &'static [&'static str]) {}
         InvalidOperator(op: String) {}
+        UnexpectedKeyword(keyword: Keyword) {}
         UnexpectedCharacter(ch: char) {}
-        UnknownError(info: String) {}
+        // CustomError(info: &'static str) {}
         EOF {}
     }
 }
