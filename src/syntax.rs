@@ -24,24 +24,34 @@ pub static KEYWORDS: &[&str] = &[KW_LET, KW_IF, KW_ELIF, KW_ELSE];
 // NOTE useful for naming operators
 // https://doc.rust-lang.org/book/appendix-02-operators.html
 
-// mathematical operations
+// NOTE some operators like () and . lack constants
+
 pub const OP_ADD: Str = "+";
 pub const OP_SUB: Str = "-";
 pub const OP_MUL: Str = "*";
 pub const OP_DIV: Str = "/";
 pub const OP_POW: Str = "^";
+pub const OP_MOD: Str = "%";
 
-// NOTE some operators like () and . lack constants
+pub const OP_EQUAL: Str = "==";
+pub const OP_INEQUAL: Str = "!=";
+pub const OP_LESS: Str = "<";
+pub const OP_LESSEQUAL: Str = "<=";
+pub const OP_GREATER: Str = ">";
+pub const OP_GREATEREQUAL: Str = ">=";
+
+pub const OP_AND: Str = "&&";
+pub const OP_OR: Str = "||";
 
 // order of operations
 pub static OPERATOR_ORDER: &[&[Operator]] = &[
     &[Pow],
-    &[Mul, Div], // Mod,
+    &[Mul, Div, Mod],
     &[Add, Sub],
-    // Equal, Inequal, Less, LessEqual, Greater, GreaterEqual,
-    // And,
-    // Or,
+    &[Equal, Inequal, Less, LessEqual, Greater, GreaterEqual],
+    &[And],
+    &[Or],
 ];
 
 // should not be used for checking the type of the following token
-pub static OPERATOR_CHARS: Str = "+-*/^().";
+pub static OPERATOR_CHARS: Str = "+-*/^%().!=<>&|";
