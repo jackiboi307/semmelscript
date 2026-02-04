@@ -31,6 +31,7 @@ pub enum Operator {
     And,
     Or,
 
+    // TODO remove these:
     FieldAccess,
     Paren,
 }

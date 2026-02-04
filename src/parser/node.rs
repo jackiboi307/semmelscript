@@ -1,4 +1,3 @@
-use super::Format;
 use super::tokens::*;
 
 #[derive(Debug, Clone)]
@@ -13,7 +12,8 @@ pub enum Node {
     // Literals
     Identifier(String),
     String(String),
-    Integer(u128),
+    Integer(i32),
+    Boolean(bool),
 }
 
 #[derive(Debug, Clone)]
@@ -31,7 +31,7 @@ pub enum Statement {
 
 #[derive(Debug, Clone)]
 pub struct Block {
-    statements: Vec<Node>,
+    pub statements: Vec<Node>,
 }
 
 impl Block {
@@ -40,6 +40,10 @@ impl Block {
             statements,
         }
     }
+}
+
+pub trait Format {
+    fn format(&self, indent: usize) -> String;
 }
 
 impl Format for Block {
@@ -88,6 +92,7 @@ impl Format for Node {
             Self::Identifier(name) => format!("{name}"),
             Self::String(string) => format!("\"{string}\""),
             Self::Integer(int) => format!("{int}"),
+            Self::Boolean(boolean) => format!("{boolean}"),
         }
     }
 }

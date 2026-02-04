@@ -3,10 +3,10 @@ use crate::*;
 mod syntax;
 use syntax::*;
 
-mod node;
+pub mod node;
 use node::*;
 
-mod tokens;
+pub mod tokens;
 use tokens::*;
 
 pub struct Parser {
@@ -30,10 +30,6 @@ quick_error! {
 }
 
 use ParseError::*;
-
-pub trait Format {
-    fn format(&self, indent: usize) -> String;
-}
 
 impl Parser {
     pub fn new(buffer: String) -> Self {
@@ -383,20 +379,13 @@ impl Parser {
 
     // parse the whole buffer
 
-    pub fn parse(&mut self) -> Result<()> {
+    pub fn parse(&mut self) -> Result<Node> {
         let block = self.read_block(false)?;
 
         if self.peek().is_ok() {
             panic!("Unread chars starting at index {}", self.i);
         }
 
-        match block {
-            Node::Block(block) => {
-                println!("{}", block.format(0));
-            }
-            _ => unreachable!()
-        }
-
-        Ok(())
+        Ok(block)
     }
 }
