@@ -15,6 +15,7 @@ pub enum Keyword {
     Let,
     If,
     Else,
+    Elif,
 }
 
 impl Parser {
@@ -276,16 +277,7 @@ impl Parser {
         let ext: Option<Box<Node>> = if let Some(kw) = self.read_keyword() {
             match kw {
                 Keyword::Else => Some(Box::new(self.read_block(true)?)),
-                Keyword::If => {
-                    if let Some(kw) = self.read_keyword() {
-                        match kw {
-                            Keyword::Else => {
-                                Some(Box::new(self.read_if()?))
-                            }
-                            _ => { return Err(UnexpectedKeyword(kw).into()); }
-                        }
-                    } else { None }
-                }
+                Keyword::Elif => Some(Box::new(self.read_if()?)),
                 _ => None
             }
         } else {
@@ -298,22 +290,17 @@ impl Parser {
     fn read_keyword(&mut self) -> Option<Keyword> {
         let potential_keyword = &*self.peek_from_chars(LOWERCASE_LETTERS);
 
-        if !potential_keyword.is_empty() {
-            // is there something after the keyword?
-            if let Some(ch) = self.chars.get(self.i + potential_keyword.chars().count()) {
-                // is that something whitespace?
-                if ch.is_whitespace() {
-                    let _ = self.next_from_chars(LOWERCASE_LETTERS);
-                    let _ = self.skip_whitespace();
+        if KEYWORDS.contains(&potential_keyword) {
+            self.stepn(potential_keyword.len());
+            let _ = self.skip_whitespace();
 
-                    return Some(match potential_keyword {
-                        KW_LET => Keyword::Let,
-                        KW_IF => Keyword::If,
-                        KW_ELSE => Keyword::Else,
-                    })
-                }
-            }
-
+            return Some(match potential_keyword {
+                KW_LET => Keyword::Let,
+                KW_IF => Keyword::If,
+                KW_ELIF => Keyword::Elif,
+                KW_ELSE => Keyword::Else,
+                _ => unreachable!()
+            })
         }
 
         None

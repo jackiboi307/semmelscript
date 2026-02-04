@@ -119,7 +119,12 @@ impl Format for Statement {
             Self::If(condition, block, ext) => {
                 let mut fmt = format!("if {} {}", condition.format(indent), block.format(indent + 1));
                 if let Some(ext) = ext {
-                    fmt.push_str(&*format!(" else {}", ext.format(indent + 1)));
+                    let indent = match **ext {
+                        Node::Statement(..) => indent, // elif
+                        Node::Block(..) => indent + 1, // else
+                        _ => unreachable!()
+                    };
+                    fmt.push_str(&*format!(" else {}", ext.format(indent)));
                 }
                 fmt
             }
