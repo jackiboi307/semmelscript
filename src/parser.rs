@@ -332,7 +332,7 @@ impl Parser {
                 if let Ok(ch) = self.next().cloned() {
                     match ch {
                         ';' => {}
-                        '\n' => {} // TODO improve?
+                        '\n' => {} // TODO improve.
                         _ => {
                             return Err(UnexpectedCharacter(ch).into())
                         }
