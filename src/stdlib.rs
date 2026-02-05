@@ -7,7 +7,7 @@ use funcs::*;
 macro_rules! get {
     ($runtime:ident, $scope:ident, $name:ident, $type:ident) => {
         expect_type!(
-            $scope.get_from($runtime, stringify!($name))
+            $scope.get($runtime, stringify!($name))
                 .unwrap_or_else(|_| {
                     panic!(concat!("invalid arg: ", stringify!($name)));
                 }),
@@ -23,7 +23,7 @@ macro_rules! add {
         $($name:ident($($arg:ident$(,)?)*);)*) => {
 
         $(
-            $scope.add_in($runtime, stringify!($name),
+            $scope.set($runtime, stringify!($name),
                 Object::Function {
                     func: &Function::Pointer($name) as *const Function,
                     args: vec![$( stringify!($arg).into(), )*],
@@ -39,5 +39,7 @@ pub fn init(runtime: &mut Runtime, scope: &mut Scope) {
         println(text);
         print(text);
         call(cmd);
+        source(path);
+        tostring(value);
     );
 }

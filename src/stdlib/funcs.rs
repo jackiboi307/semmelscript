@@ -11,6 +11,21 @@ pub fn print(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
     Ok(Object::Null)
 }
 
+pub fn source(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
+    let path = get!(runtime, scope, path, String);
+    let scope: &mut Scope = unsafe { &mut *scope.parent.unwrap() };
+    execute(runtime, scope, path);
+    Ok(Object::Null)
+}
+
+pub fn tostring(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
+    Ok(Object::String(match scope.get(runtime, "value").unwrap() {
+        Object::String(string) => string,
+        Object::Integer(integer) => integer.to_string(),
+        _ => unimplemented!()
+    }))
+}
+
 pub fn call(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
     let (shell, flag) = if cfg!(target_os = "windows") {
             ("cmd", "/C")

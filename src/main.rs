@@ -1,7 +1,7 @@
 mod parser;
 use parser::{
     Parser,
-    node::Format,
+    node::{Node, Format},
 };
 
 mod runtime;
@@ -12,21 +12,16 @@ mod stdlib;
 pub use quick_error::quick_error;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-fn main() {
-    let [_, file]: [String; 2] = std::env::args()
-        .collect::<Vec<_>>().try_into().unwrap_or_else(|_| panic!("Expected 1 argument!"));
+const DEBUG: bool = false;
 
-    // other args
-    // TODO add cli params
-    let debug = false;
-
-    let buffer = std::fs::read_to_string(&file)
-        .unwrap_or_else(|e| panic!("Could not read file {file}: {e}"));
+fn execute(runtime: &mut Runtime, scope: &mut Scope, filename: String) {
+    let buffer = std::fs::read_to_string(&filename)
+        .unwrap_or_else(|e| panic!("Could not read file {filename}: {e}"));
 
     let mut parser = Parser::new(buffer);
     let parsed = parser.parse();
 
-    let block = match parsed {
+    let node = match parsed {
         Ok(node) => node,
         Err(err) => {
             eprintln!("syntax error: {err} ({}:{})", parser.row(), parser.col());
@@ -34,26 +29,38 @@ fn main() {
         }
     };
 
-    let mut runtime = Runtime::new();
-    let mut scope = Scope::new();
-
-    // add functions
-    stdlib::init(&mut runtime, &mut scope);
-
     // print parsed output
-    if debug { println!("parsed code:\n{}", block.format(0)); }
+    if DEBUG { println!("parsed code:\n{}", node.format(0)); }
 
     // execute the code
-    let res = block.eval(&mut runtime, &mut scope);
+    let res = match node {
+        Node::Block(block) => {
+            block.eval(runtime, scope)
+        }
+        _ => unreachable!()
+    };
 
     match res {
         Ok(_) => {
-            if debug {
-                println!("final objects: {:#?}", runtime.objects);
+            if DEBUG {
+                println!("final objects: {:#?}", scope.objects);
             }
         }
         Err(err) => {
             eprintln!("runtime error: {err}");
         }
     }
+}
+
+fn main() {
+    let [_, filename]: [String; 2] = std::env::args()
+        .collect::<Vec<_>>().try_into().unwrap_or_else(|_| panic!("Expected 1 argument!"));
+
+    let mut runtime = Runtime::new();
+    let mut scope = Scope::new(None);
+
+    // add functions
+    stdlib::init(&mut runtime, &mut scope);
+
+    execute(&mut runtime, &mut scope, filename);
 }

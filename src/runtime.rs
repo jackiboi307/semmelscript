@@ -26,13 +26,13 @@ macro_rules! expect_type {
     }
 }
 
-pub struct Runtime {
-    pub objects: Vec<Object>,
-}
+pub struct Runtime;
 
 #[derive(Debug, Clone)]
 pub struct Scope {
-    names: HashMap<Box<str>, usize>,
+    pub objects: Vec<Object>,
+    pub names: HashMap<Box<str>, usize>,
+    pub parent: Option<*mut Scope>,
 }
 
 #[derive(Debug, Clone)]
@@ -64,8 +64,16 @@ pub enum Object {
 
 impl Runtime {
     pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Scope {
+    pub fn new(parent: Option<*mut Scope>) -> Self {
         Self {
+            names: HashMap::new(),
             objects: Vec::new(),
+            parent,
         }
     }
 
@@ -73,26 +81,23 @@ impl Runtime {
         self.objects.push(object);
         self.objects.len() - 1
     }
-}
 
-impl Scope {
-    pub fn new() -> Self {
-        Self {
-            names: HashMap::new(),
-        }
-    }
-
-    pub fn bind_name(&mut self, name: &str, id: usize) {
+    fn bind_name(&mut self, name: &str, id: usize) {
         self.names.insert(name.into(), id);
     }
 
-    pub fn add_in(&mut self, runtime: &mut Runtime, ident: &str, object: Object) {
-        self.names.insert(ident.into(), runtime.add_object(object));
+    pub fn set(&mut self, _runtime: &mut Runtime, name: &str, object: Object) {
+        if self.names.contains_key(name) {
+            self.objects.insert(self.names[name], object);
+        } else {
+            let id = self.add_object(object);
+            self.names.insert(name.into(), id);
+        }
     }
 
-    pub fn get_from(&mut self, runtime: &Runtime, ident: &str) -> Result<Object> {
-        Ok(runtime.objects.get(*self.names.get(ident)
-            .ok_or(NameError(ident.into()))?).unwrap().clone())
+    pub fn get(&mut self, _runtime: &Runtime, ident: &str) -> Result<Object> {
+        let id = self.names.get(ident).ok_or_else(|| NameError(ident.into()))?;
+        Ok(self.objects[*id].clone())
     }
 }
 
@@ -113,11 +118,15 @@ impl Evaluate for Node {
                         if args.len() != arg_names.len() {
                             return Err(ExpectedArgs(arg_names.len()).into());
                         }
-                        let mut func_scope = Scope::new();
+
+                        // TODO this is really shitty, functions should be ran in
+                        // isolated scopes, but this makes sourcing possible which
+                        // is important functionaliy
+                        let mut func_scope = Scope::new(Some(scope));
                         for (i, arg_name) in arg_names.iter().enumerate() {
                             let arg_node: &Node = &args[i];
                             let arg = arg_node.eval(runtime, scope)?;
-                            func_scope.add_in(runtime, arg_name, arg);
+                            func_scope.set(runtime, arg_name, arg);
                         }
 
                         let func = unsafe { (*func).clone() };
@@ -141,7 +150,7 @@ impl Evaluate for Node {
                 node.eval(runtime, &mut scope.clone())
             }
 
-            Self::Identifier(ident) => scope.get_from(runtime, ident),
+            Self::Identifier(ident) => scope.get(runtime, ident),
             Self::String(string) => Ok(Object::String(string.clone())),
             Self::Integer(integer) => Ok(Object::Integer(*integer)),
             Self::Boolean(boolean) => Ok(Object::Boolean(*boolean)),
@@ -164,8 +173,7 @@ impl Evaluate for Statement {
         match self {
             Self::SetVariable(name, value) => {
                 let value = value.eval(runtime, scope)?;
-                let id = runtime.add_object(value);
-                scope.bind_name(&name.clone(), id);
+                scope.set(runtime, name, value);
                 Ok(Object::Null)
             }
             Self::If(condition, block, ext) => {
