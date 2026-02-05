@@ -38,11 +38,7 @@ fn main() {
     let mut scope = Scope::new();
 
     // add functions
-    scope.add_in(&mut runtime, "println",
-        Object::Function {
-            func: &Function::Pointer(stdlib::println) as *const Function,
-            args: vec!["text".into()],
-        });
+    stdlib::init(&mut runtime, &mut scope);
 
     // print parsed output
     if debug { println!("parsed code:\n{}", block.format(0)); }
