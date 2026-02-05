@@ -1,7 +1,5 @@
 let x = 8;
 
-println("hello world!");
-
 if x ^ 2 == 64 {
-    print("your name is: " + call("whoami"));
+    println("nice to meet you, " + call("whoami") + "!");
 };

@@ -24,7 +24,14 @@ pub fn call(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
         .expect("command failed")
         .stdout; // TODO fix
 
-    let stdout: String = stdout.iter().map(|b| *b as char).collect();
+    let mut stdout: String = stdout.iter().map(|b| *b as char).collect();
+    
+    // remove trailing newline
+    if let Some(ch) = stdout.bytes().last() {
+        if ch == b'\n' {
+            stdout.remove(stdout.len() - 1);
+        }
+    }
 
     Ok(Object::String(stdout))
 }
