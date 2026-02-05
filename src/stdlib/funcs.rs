@@ -11,10 +11,6 @@ pub fn print(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
     Ok(Object::Null)
 }
 
-pub fn get(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
-    Ok(Object::String(get!(runtime, scope, string, String)))
-}
-
 pub fn call(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
     let (shell, flag) = if cfg!(target_os = "windows") {
             ("cmd", "/C")

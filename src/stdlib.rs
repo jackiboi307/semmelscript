@@ -39,6 +39,5 @@ pub fn init(runtime: &mut Runtime, scope: &mut Scope) {
         println(text);
         print(text);
         call(cmd);
-        get(string);
     );
 }
