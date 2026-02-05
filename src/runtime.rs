@@ -204,8 +204,25 @@ impl Evaluate for BinaryOp {
         Ok(match self.op {
             Add | Sub | Mul | Div | Pow | Mod |
             Equal | Inequal | Less | LessEqual | Greater | GreaterEqual => {
-                let a = expect_type!(self.a.eval(runtime, scope)?, Integer);
-                let b = expect_type!(self.b.eval(runtime, scope)?, Integer);
+                let a = self.a.eval(runtime, scope)?;
+                let b = self.b.eval(runtime, scope)?;
+
+                match self.op {
+                    Add => {
+                        // string concatenation
+                        match a {
+                            Object::String(a) => {
+                                let b = expect_type!(b, String);
+                                return Ok(Object::String(a + &b))
+                            }
+                            _ => {}
+                        }
+                    }
+                    _ => {}
+                }
+
+                let a = expect_type!(a, Integer);
+                let b = expect_type!(b, Integer);
 
                 match self.op {
                     Add | Sub | Mul | Div | Pow | Mod => {

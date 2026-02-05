@@ -1,9 +1,7 @@
-let x = 123;
+let x = 8;
 
 println("hello world!");
 
-if x == 123 {
-    println("x is 123");
+if x ^ 2 == 64 {
+    print("your name is: " + call("whoami"));
 };
-
-print(call("whoami"));
