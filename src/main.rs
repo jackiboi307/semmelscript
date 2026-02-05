@@ -47,7 +47,7 @@ fn main() {
     let res = block.eval(&mut runtime, &mut scope);
 
     match res {
-        Ok(value) => {
+        Ok(_) => {
             if debug {
                 println!("final objects: {:#?}", runtime.objects);
             }

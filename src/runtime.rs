@@ -18,15 +18,13 @@ use RuntimeError::*;
 #[macro_export]
 macro_rules! expect_type {
     ($value:expr, $type:ident) => {{
-        use crate::runtime::{Object, Type, RuntimeError::*};
+        use crate::runtime::{Object, Type, RuntimeError};
         match $value {
             Object::$type(value) => value,
             _ => { return Err( RuntimeError::ExpectedType(Type::$type).into()); }
         }}
     }
 }
-
-pub use crate::expect_type;
 
 pub struct Runtime {
     pub objects: Vec<Object>,
@@ -55,7 +53,7 @@ pub enum Type {
 #[derive(Debug, Clone)]
 pub enum Object {
     Null,
-    String(*const String),
+    String(String),
     Integer(IntegerType),
     Boolean(bool),
     Function {
@@ -94,7 +92,7 @@ impl Scope {
 
     pub fn get_from(&mut self, runtime: &Runtime, ident: &str) -> Result<Object> {
         Ok(runtime.objects.get(*self.names.get(ident)
-            .ok_or(NameError(ident.clone().into()))?).unwrap().clone())
+            .ok_or(NameError(ident.into()))?).unwrap().clone())
     }
 }
 
@@ -144,7 +142,7 @@ impl Evaluate for Node {
             }
 
             Self::Identifier(ident) => scope.get_from(runtime, ident),
-            Self::String(string) => Ok(Object::String(string as *const String)),
+            Self::String(string) => Ok(Object::String(string.clone())),
             Self::Integer(integer) => Ok(Object::Integer(*integer)),
             Self::Boolean(boolean) => Ok(Object::Boolean(*boolean)),
         }

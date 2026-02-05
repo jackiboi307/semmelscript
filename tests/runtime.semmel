@@ -5,3 +5,5 @@ println("hello world!");
 if x == 123 {
     println("x is 123");
 };
+
+print(call("whoami"));
