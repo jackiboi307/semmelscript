@@ -86,13 +86,15 @@ impl Scope {
         self.names.insert(name.into(), id);
     }
 
-    pub fn set(&mut self, _runtime: &mut Runtime, name: &str, object: Object) {
-        if self.names.contains_key(name) {
-            self.objects.insert(self.names[name], object);
-        } else {
-            let id = self.add_object(object);
-            self.names.insert(name.into(), id);
-        }
+    pub fn define(&mut self, _runtime: &mut Runtime, name: &str, object: Object) {
+        assert!(!self.names.contains_key(name)); // TODO fix
+        let id = self.add_object(object);
+        self.names.insert(name.into(), id);
+    }
+
+    pub fn update(&mut self, runtime: &mut Runtime, name: &str, object: Object) {
+        // TODO fix
+        self.objects.insert(*self.names.get(name).unwrap(), object);
     }
 
     pub fn get(&mut self, _runtime: &Runtime, ident: &str) -> Result<Object> {
@@ -126,7 +128,7 @@ impl Evaluate for Node {
                         for (i, arg_name) in arg_names.iter().enumerate() {
                             let arg_node: &Node = &args[i];
                             let arg = arg_node.eval(runtime, scope)?;
-                            func_scope.set(runtime, arg_name, arg);
+                            func_scope.define(runtime, arg_name, arg);
                         }
 
                         let func = unsafe { (*func).clone() };
@@ -171,9 +173,9 @@ impl Evaluate for Block {
 impl Evaluate for Statement {
     fn eval(&self, runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
         match self {
-            Self::SetVariable(name, value) => {
+            Self::DefineVariable(name, value) => {
                 let value = value.eval(runtime, scope)?;
-                scope.set(runtime, name, value);
+                scope.define(runtime, name, value);
                 Ok(Object::Null)
             }
             Self::If(condition, block, ext) => {
@@ -269,6 +271,13 @@ impl Evaluate for BinaryOp {
                     Or => a || b,
                     _ => unreachable!()
                 })
+            }
+
+            SetValue => {
+                let name = expect_type!(self.a.eval(runtime, scope)?, String);
+                let value = self.b.eval(runtime, scope)?;
+                scope.update(runtime, &name, value);
+                Object::Null
             }
 
             FieldAccess | Paren => unreachable!()

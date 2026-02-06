@@ -31,6 +31,8 @@ pub enum Operator {
     And,
     Or,
 
+    SetValue,
+
     // TODO remove these:
     FieldAccess,
     Paren,
@@ -53,6 +55,7 @@ impl Format for Operator {
             Self::GreaterEqual => OP_GREATEREQUAL,
             Self::And => OP_AND,
             Self::Or => OP_OR,
+            Self::SetValue => OP_SETVALUE,
             Self::FieldAccess => ".",
             Self::Paren => "(",
         })

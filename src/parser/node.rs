@@ -25,7 +25,7 @@ pub struct BinaryOp {
 
 #[derive(Debug, Clone)]
 pub enum Statement {
-    SetVariable(String, Box<Node>),
+    DefineVariable(String, Box<Node>),
     If(Box<Node>, Box<Node>, Option<Box<Node>>),
 }
 
@@ -100,8 +100,10 @@ impl Format for Node {
 impl Format for Statement {
     fn format(&self, indent: usize) -> String {
         match self {
-            Self::SetVariable(ident, value) =>
+            Self::DefineVariable(ident, value) =>
                 format!("let {} = {}", ident, value.format(indent)),
+            // Self::SetValue(ident, value) =>
+            //     format!("{} = {}", ident, value.format(indent)),
             Self::If(condition, block, ext) => {
                 let mut fmt = format!("if {} {}", condition.format(indent), block.format(indent + 1));
                 if let Some(ext) = ext {

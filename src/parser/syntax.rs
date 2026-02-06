@@ -43,8 +43,11 @@ pub const OP_GREATEREQUAL: Str = ">=";
 pub const OP_AND: Str = "&&";
 pub const OP_OR: Str = "||";
 
+pub const OP_SETVALUE: Str = "=";
+
 // order of operations
 pub static OPERATOR_ORDER: &[&[Operator]] = &[
+    &[SetValue],
     &[Pow],
     &[Mul, Div, Mod],
     &[Add, Sub],

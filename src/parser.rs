@@ -24,7 +24,7 @@ quick_error! {
         InvalidOperator(op: String) {}
         UnexpectedKeyword(keyword: Keyword) {}
         UnexpectedCharacter(ch: char) {}
-        // CustomError(info: &'static str) {}
+        CustomError(info: &'static str) {}
         EOF {}
     }
 }
@@ -167,6 +167,7 @@ impl Parser {
             OP_GREATEREQUAL => GreaterEqual,
             OP_AND => And,
             OP_OR => Or,
+            OP_SETVALUE => SetValue,
             "." => FieldAccess,
             "(" => Paren,
             _ => { return Err(InvalidOperator(op.to_string()).into()); }
@@ -241,7 +242,7 @@ impl Parser {
             if EXPR_TERMINATORS.contains(*ch) {
                 break
 
-            } if OPERATOR_CHARS.contains(*ch) {
+            } else if OPERATOR_CHARS.contains(*ch) {
                 let op = self.read_operator()?;
 
                 self.skip_whitespace()?;
@@ -263,11 +264,27 @@ impl Parser {
                             let [a, b]: [Node; 2] = values.splice(i..=i+1, [])
                                 .collect::<Vec<_>>().try_into().unwrap();
                             let _ = operators.remove(i);
+
+                            // TODO very bad:
+                            // convert value a from ident to string,
+                            // for Operator::SetValue
+
+                            let a = match op {
+                                Operator::SetValue => {
+                                    match a {
+                                        Node::Identifier(name) => Node::String(name),
+                                        _ => { return Err(CustomError("Expected identifier").into()); }
+                                    }
+                                }
+                                _ => a
+                            };
+
                             values.insert(i, Node::BinaryOp(Box::new(BinaryOp {
                                 op: *op,
                                 a,
                                 b,
                             })));
+
                             break 'levels
                         }
                     }
@@ -289,7 +306,7 @@ impl Parser {
 
         let value = self.read_expression()?;
 
-        Ok(Node::Statement(Statement::SetVariable(ident, Box::new(value))))
+        Ok(Node::Statement(Statement::DefineVariable(ident, Box::new(value))))
     }
 
     fn read_if(&mut self) -> Result<Node> {
@@ -337,7 +354,7 @@ impl Parser {
             }
         }
 
-        self.read_value()
+        self.read_expression()
     }
 
     fn read_block(&mut self, inner: bool) -> Result<Node> {

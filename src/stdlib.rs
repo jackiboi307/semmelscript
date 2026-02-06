@@ -23,7 +23,7 @@ macro_rules! add {
         $($name:ident($($arg:ident$(,)?)*);)*) => {
 
         $(
-            $scope.set($runtime, stringify!($name),
+            $scope.define($runtime, stringify!($name),
                 Object::Function {
                     func: &Function::Pointer($name) as *const Function,
                     args: vec![$( stringify!($arg).into(), )*],
