@@ -84,6 +84,7 @@ impl Scope {
         self.objects.len() - 1
     }
 
+    // TODO remove runtime?
     pub fn define(&mut self, _runtime: &mut Runtime, name: &str, object: Object) {
         assert!(!self.names.contains_key(name)); // TODO fix
         let id = self.add_object(object);
@@ -108,6 +109,16 @@ impl Scope {
             }
         }
     }
+
+    fn root(&mut self) -> *mut Self {
+        if let Some(parent) = self.parent {
+            unsafe {
+                (*parent).root()
+            }
+        } else {
+            self
+        }
+    }
 }
 
 pub trait Evaluate {
@@ -128,10 +139,7 @@ impl Evaluate for Node {
                             return Err(ExpectedArgs(arg_names.len()).into());
                         }
 
-                        // TODO this is really shitty, functions should be ran in
-                        // isolated scopes, but this makes sourcing possible which
-                        // is important functionaliy
-                        let mut func_scope = Scope::new(Some(scope));
+                        let mut func_scope = Scope::new(Some(scope.root()));
                         for (i, arg_name) in arg_names.iter().enumerate() {
                             let arg_node: &Node = &args[i];
                             let arg = arg_node.eval(runtime, scope)?;
