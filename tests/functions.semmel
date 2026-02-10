@@ -1,5 +1,5 @@
-fn hej() {
-    println("hej");
+fn hej(name) {
+    println("hej " + name + "!");
 };
 
-hej();
+hej(call("whoami"));
