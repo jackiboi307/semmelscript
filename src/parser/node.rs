@@ -9,7 +9,7 @@ pub enum Node {
     // Operators
     BinaryOp(Box<BinaryOp>),
 
-    // Literals
+    // TODO replace with Box<str>?
     Identifier(String),
     String(String),
     Integer(i32),
@@ -26,6 +26,7 @@ pub struct BinaryOp {
 #[derive(Debug, Clone)]
 pub enum Statement {
     DefineVariable(String, Box<Node>),
+    DefineFunction(String, Vec<Box<str>>, Block),
     If(Box<Node>, Box<Node>, Option<Box<Node>>),
 }
 
@@ -101,9 +102,12 @@ impl Format for Statement {
     fn format(&self, indent: usize) -> String {
         match self {
             Self::DefineVariable(ident, value) =>
-                format!("let {} = {}", ident, value.format(indent)),
+                format!("let {ident} = {}", value.format(indent)),
             // Self::SetValue(ident, value) =>
             //     format!("{} = {}", ident, value.format(indent)),
+            Self::DefineFunction(ident, args, block) => {
+                format!("fn {ident}({}) {};", args.join(", "), block.format(0))
+            }
             Self::If(condition, block, ext) => {
                 let mut fmt = format!("if {} {}", condition.format(indent), block.format(indent + 1));
                 if let Some(ext) = ext {

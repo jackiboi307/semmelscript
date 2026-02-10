@@ -4,6 +4,8 @@ use std::collections::HashMap;
 
 type IntegerType = i32;
 
+// TODO replace some 'name' with 'ident'
+
 quick_error! {
     #[derive(Debug)]
     pub enum RuntimeError {
@@ -38,7 +40,7 @@ pub struct Scope {
 #[derive(Debug, Clone)]
 pub enum Function {
     Pointer(fn(&mut Runtime, &mut Scope) -> Result<Object>),
-    Block(Node),
+    Block(Block),
 }
 
 #[derive(Debug)]
@@ -57,7 +59,7 @@ pub enum Object {
     Integer(IntegerType),
     Boolean(bool),
     Function {
-        func: *const Function,
+        func: Box<Function>,
         args: Vec<Box<str>>,
     },
 }
@@ -82,24 +84,29 @@ impl Scope {
         self.objects.len() - 1
     }
 
-    fn bind_name(&mut self, name: &str, id: usize) {
-        self.names.insert(name.into(), id);
-    }
-
     pub fn define(&mut self, _runtime: &mut Runtime, name: &str, object: Object) {
         assert!(!self.names.contains_key(name)); // TODO fix
         let id = self.add_object(object);
         self.names.insert(name.into(), id);
     }
 
-    pub fn update(&mut self, runtime: &mut Runtime, name: &str, object: Object) {
+    pub fn update(&mut self, _runtime: &mut Runtime, name: &str, object: Object) {
         // TODO fix
         self.objects.insert(*self.names.get(name).unwrap(), object);
     }
 
-    pub fn get(&mut self, _runtime: &Runtime, ident: &str) -> Result<Object> {
-        let id = self.names.get(ident).ok_or_else(|| NameError(ident.into()))?;
-        Ok(self.objects[*id].clone())
+    pub fn get(&mut self, runtime: &Runtime, ident: &str) -> Result<Object> {
+        if let Some(id) = self.names.get(ident) {
+            Ok(self.objects[*id].clone())
+        } else {
+            if let Some(parent) = self.parent {
+                unsafe {
+                    (*parent).get(runtime, ident)
+                }
+            } else {
+                Err(NameError(ident.into()).into())
+            }
+        }
     }
 }
 
@@ -131,8 +138,7 @@ impl Evaluate for Node {
                             func_scope.define(runtime, arg_name, arg);
                         }
 
-                        let func = unsafe { (*func).clone() };
-                        match func {
+                        match *func {
                             Function::Pointer(ptr) => {
                                 ptr(runtime, &mut func_scope)
                             }
@@ -176,6 +182,14 @@ impl Evaluate for Statement {
             Self::DefineVariable(name, value) => {
                 let value = value.eval(runtime, scope)?;
                 scope.define(runtime, name, value);
+                Ok(Object::Null)
+            }
+            Self::DefineFunction(name, args, block) => {
+                // TODO replace cloning with pointer or something?
+                scope.define(runtime, name, Object::Function {
+                    func: Box::new(Function::Block(block.clone())),
+                    args: args.clone(),
+                });
                 Ok(Object::Null)
             }
             Self::If(condition, block, ext) => {

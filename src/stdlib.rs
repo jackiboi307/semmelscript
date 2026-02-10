@@ -25,7 +25,7 @@ macro_rules! add {
         $(
             $scope.define($runtime, stringify!($name),
                 Object::Function {
-                    func: &Function::Pointer($name) as *const Function,
+                    func: Box::new(Function::Pointer($name)),
                     args: vec![$( stringify!($arg).into(), )*],
                 }
             );

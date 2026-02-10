@@ -19,7 +19,10 @@ pub const KW_LET: Str = "let";
 pub const KW_IF: Str = "if";
 pub const KW_ELIF: Str = "elif";
 pub const KW_ELSE: Str = "else";
-pub static KEYWORDS: &[&str] = &[KW_LET, KW_IF, KW_ELIF, KW_ELSE];
+pub const KW_FUNC: Str = "fn";
+pub static KEYWORDS: &[&str] = &[
+    KW_LET, KW_IF, KW_ELIF, KW_ELSE, KW_FUNC
+];
 
 // NOTE useful for naming operators
 // https://doc.rust-lang.org/book/appendix-02-operators.html

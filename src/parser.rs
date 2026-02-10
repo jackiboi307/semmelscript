@@ -20,16 +20,24 @@ quick_error! {
     #[derive(Debug)]
     enum ParseError {
         ExpectedToken(token: String) {}
-        ExpectedTokens(tokens: &'static [&'static str]) {}
+        ExpectedTokens(tokens: &'static [&'static str], found: String) {}
+        // TODO create enum for compile time types!
+        ExpectedType(typ: &'static str) {}
         InvalidOperator(op: String) {}
         UnexpectedKeyword(keyword: Keyword) {}
         UnexpectedCharacter(ch: char) {}
-        CustomError(info: &'static str) {}
         EOF {}
     }
 }
 
 use ParseError::*;
+
+fn ident_to_str(node: &Node) -> Result<&str> {
+    match node {
+        Node::Identifier(ident) => Ok(ident),
+        _ => Err(ExpectedType("Identifier").into())
+    }
+}
 
 impl Parser {
     pub fn new(buffer: String) -> Self {
@@ -213,13 +221,24 @@ impl Parser {
         let _ = self.skip_whitespace();
         let mut args = Vec::new();
 
-        loop {
-            args.push(self.read_expression()?);
+        if *self.peek()? == ')' {
+            self.step();
+            let _  = self.skip_whitespace();
+            return Ok(args);
+        }
 
-            match self.next()? {
-                ')' => { return Ok(args) }
+        loop {
+            let expr = self.read_expression()?;
+            args.push(expr);
+
+            let ch = self.next()?;
+            match ch {
+                ')' => {
+                    let _  = self.skip_whitespace();
+                    return Ok(args);
+                }
                 ',' => {}
-                _ => { return Err(ExpectedTokens(&[",", ")"]).into()) }
+                _ => { return Err(ExpectedTokens(&[",", ")"], ch.to_string()).into()) }
             }
 
             let _ = self.skip_whitespace();
@@ -265,17 +284,8 @@ impl Parser {
                                 .collect::<Vec<_>>().try_into().unwrap();
                             let _ = operators.remove(i);
 
-                            // TODO very bad:
-                            // convert value a from ident to string,
-                            // for Operator::SetValue
-
                             let a = match op {
-                                Operator::SetValue => {
-                                    match a {
-                                        Node::Identifier(name) => Node::String(name),
-                                        _ => { return Err(CustomError("Expected identifier").into()); }
-                                    }
-                                }
+                                Operator::SetValue => Node::String(ident_to_str(&a)?.to_string()),
                                 _ => a
                             };
 
@@ -309,6 +319,25 @@ impl Parser {
         Ok(Node::Statement(Statement::DefineVariable(ident, Box::new(value))))
     }
 
+    fn read_func(&mut self) -> Result<Node> {
+        let ident = self.read_identifier()?;
+        let _ = self.skip_whitespace();
+        self.expect("(")?;
+
+        let args = self.read_args()?;
+        let args: Vec<Box<str>> = args.iter().map(
+            |arg| ident_to_str(arg).unwrap().into() // TODO fix
+        ).collect();
+
+        let block = self.read_block(true)?;
+        let block = match block {
+            Node::Block(block) => block,
+            _ => unreachable!()
+        };
+
+        Ok(Node::Statement(Statement::DefineFunction(ident, args, block)))
+    }
+
     fn read_if(&mut self) -> Result<Node> {
         let condition = self.read_expression()?;
         let block = self.read_block(true)?;
@@ -338,6 +367,7 @@ impl Parser {
                 KW_IF => Keyword::If,
                 KW_ELIF => Keyword::Elif,
                 KW_ELSE => Keyword::Else,
+                KW_FUNC => Keyword::Func,
                 _ => unreachable!()
             })
         }
@@ -350,6 +380,7 @@ impl Parser {
             match keyword {
                 Keyword::Let => return self.read_let(),
                 Keyword::If => return self.read_if(),
+                Keyword::Func => return self.read_func(),
                 _ => { return Err(UnexpectedKeyword(keyword).into()) }
             }
         }
