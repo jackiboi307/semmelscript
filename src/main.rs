@@ -60,7 +60,7 @@ fn main() {
     let mut scope = Scope::new(None);
 
     // add functions
-    stdlib::init(&mut runtime, &mut scope);
+    stdlib::init(&mut runtime.globals);
 
     execute(&mut runtime, &mut scope, filename);
 }

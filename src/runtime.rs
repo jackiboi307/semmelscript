@@ -28,7 +28,9 @@ macro_rules! expect_type {
     }
 }
 
-pub struct Runtime;
+pub struct Runtime {
+    pub globals: Scope,
+}
 
 #[derive(Debug, Clone)]
 pub struct Scope {
@@ -66,7 +68,9 @@ pub enum Object {
 
 impl Runtime {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            globals: Scope::new(None),
+        }
     }
 }
 
@@ -85,15 +89,16 @@ impl Scope {
     }
 
     // TODO remove runtime?
-    pub fn define(&mut self, _runtime: &mut Runtime, name: &str, object: Object) {
+    pub fn define(&mut self, name: &str, object: Object) {
         assert!(!self.names.contains_key(name)); // TODO fix
         let id = self.add_object(object);
         self.names.insert(name.into(), id);
     }
 
-    pub fn update(&mut self, _runtime: &mut Runtime, name: &str, object: Object) {
-        // TODO fix
-        self.objects.insert(*self.names.get(name).unwrap(), object);
+    pub fn update(&mut self, _runtime: &mut Runtime, name: &str, object: Object) -> Result<()> {
+        self.objects.insert(*self.names.get(name)
+            .ok_or(NameError(name.into()))?, object);
+        Ok(())
     }
 
     pub fn get(&mut self, runtime: &Runtime, ident: &str) -> Result<Object> {
@@ -105,7 +110,12 @@ impl Scope {
                     (*parent).get(runtime, ident)
                 }
             } else {
-                Err(NameError(ident.into()).into())
+                match runtime.globals.names.get(ident) {
+                    Some(id) => {
+                        Ok(runtime.globals.objects[*id].clone())
+                    }
+                    None => Err(NameError(ident.into()).into())
+                }
             }
         }
     }
@@ -143,7 +153,7 @@ impl Evaluate for Node {
                         for (i, arg_name) in arg_names.iter().enumerate() {
                             let arg_node: &Node = &args[i];
                             let arg = arg_node.eval(runtime, scope)?;
-                            func_scope.define(runtime, arg_name, arg);
+                            func_scope.define(arg_name, arg);
                         }
 
                         match *func {
@@ -189,12 +199,12 @@ impl Evaluate for Statement {
         match self {
             Self::DefineVariable(name, value) => {
                 let value = value.eval(runtime, scope)?;
-                scope.define(runtime, name, value);
+                scope.define(name, value);
                 Ok(Object::Null)
             }
             Self::DefineFunction(name, args, block) => {
                 // TODO replace cloning with pointer or something?
-                scope.define(runtime, name, Object::Function {
+                scope.define(name, Object::Function {
                     func: Box::new(Function::Block(block.clone())),
                     args: args.clone(),
                 });
@@ -298,7 +308,7 @@ impl Evaluate for BinaryOp {
             SetValue => {
                 let name = expect_type!(self.a.eval(runtime, scope)?, String);
                 let value = self.b.eval(runtime, scope)?;
-                scope.update(runtime, &name, value);
+                scope.update(runtime, &name, value)?;
                 Object::Null
             }
 

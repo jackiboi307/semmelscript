@@ -5,7 +5,7 @@ use funcs::*;
 
 #[macro_export]
 macro_rules! get {
-    ($runtime:ident, $scope:ident, $name:ident, $type:ident) => {
+    ($runtime:expr, $scope:expr, $name:ident, $type:ident) => {
         expect_type!(
             $scope.get($runtime, stringify!($name))
                 .unwrap_or_else(|_| {
@@ -19,11 +19,11 @@ macro_rules! get {
 use crate::get;
 
 macro_rules! add {
-    ($runtime:ident, $scope:ident,
+    ($scope:expr,
         $($name:ident($($arg:ident$(,)?)*);)*) => {
 
         $(
-            $scope.define($runtime, stringify!($name),
+            $scope.define(stringify!($name),
                 Object::Function {
                     func: Box::new(Function::Pointer($name)),
                     args: vec![$( stringify!($arg).into(), )*],
@@ -33,9 +33,9 @@ macro_rules! add {
     }
 }
 
-pub fn init(runtime: &mut Runtime, scope: &mut Scope) {
+pub fn init(scope: &mut Scope) {
     // this is such a sexy macro
-    add!(runtime, scope,
+    add!(scope,
         println(text);
         print(text);
         call(cmd);
