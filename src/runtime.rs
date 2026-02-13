@@ -311,8 +311,6 @@ impl Evaluate for BinaryOp {
                 scope.update(runtime, &name, value)?;
                 Object::Null
             }
-
-            FieldAccess | Paren => unreachable!()
         })
     }
 }

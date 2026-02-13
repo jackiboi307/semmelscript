@@ -176,8 +176,6 @@ impl Parser {
             OP_AND => And,
             OP_OR => Or,
             OP_SETVALUE => SetValue,
-            "." => FieldAccess,
-            "(" => Paren,
             _ => { return Err(InvalidOperator(op.to_string()).into()); }
         })
     }
