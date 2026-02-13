@@ -9,9 +9,8 @@ pub enum Node {
     // Operators
     BinaryOp(Box<BinaryOp>),
 
-    // TODO replace with Box<str>?
-    Identifier(String),
-    String(String),
+    Identifier(Box<str>),
+    String(Box<str>),
     Integer(i32),
     Boolean(bool),
 }

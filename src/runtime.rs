@@ -47,7 +47,7 @@ pub enum Function {
 
 #[derive(Debug)]
 pub enum Type {
-    Null,
+    // Null,
     String,
     Integer,
     Boolean,
@@ -177,7 +177,7 @@ impl Evaluate for Node {
             }
 
             Self::Identifier(ident) => scope.get(runtime, ident),
-            Self::String(string) => Ok(Object::String(string.clone())),
+            Self::String(string) => Ok(Object::String(string.to_string())),
             Self::Integer(integer) => Ok(Object::Integer(*integer)),
             Self::Boolean(boolean) => Ok(Object::Boolean(*boolean)),
         }

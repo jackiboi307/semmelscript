@@ -20,8 +20,10 @@ pub const KW_IF: Str = "if";
 pub const KW_ELIF: Str = "elif";
 pub const KW_ELSE: Str = "else";
 pub const KW_FUNC: Str = "fn";
+pub const KW_TRUE: Str = "true";
+pub const KW_FALSE: Str = "false";
 pub static KEYWORDS: &[&str] = &[
-    KW_LET, KW_IF, KW_ELIF, KW_ELSE, KW_FUNC
+    KW_LET, KW_IF, KW_ELIF, KW_ELSE, KW_FUNC, KW_TRUE, KW_FALSE
 ];
 
 // NOTE useful for naming operators

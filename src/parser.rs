@@ -147,7 +147,7 @@ impl Parser {
         if *self.next()? != terminator {
             Err(ExpectedToken(terminator.to_string()).into())
         } else {
-            Ok(Node::String(result))
+            Ok(Node::String(result.into()))
         }
     }
 
@@ -188,7 +188,15 @@ impl Parser {
         } else if STRING_TERMINATORS.contains(*ch) {
             self.read_string()?
         } else if LETTERS.contains(*ch) {
-            Node::Identifier(self.read_identifier()?)
+            if let Some(keyword) = self.read_keyword() {
+                match keyword {
+                    Keyword::True => Node::Boolean(true),
+                    Keyword::False => Node::Boolean(false),
+                    _ => { return Err(UnexpectedKeyword(keyword).into()); }
+                }
+            } else {
+                Node::Identifier(self.read_identifier()?.into())
+            }
         } else if *ch == '(' {
             self.step();
             let value = self.read_expression()?;
@@ -283,7 +291,7 @@ impl Parser {
                             let _ = operators.remove(i);
 
                             let a = match op {
-                                Operator::SetValue => Node::String(ident_to_str(&a)?.to_string()),
+                                Operator::SetValue => Node::String(ident_to_str(&a)?.into()),
                                 _ => a
                             };
 
@@ -366,6 +374,8 @@ impl Parser {
                 KW_ELIF => Keyword::Elif,
                 KW_ELSE => Keyword::Else,
                 KW_FUNC => Keyword::Func,
+                KW_TRUE => Keyword::True,
+                KW_FALSE => Keyword::False,
                 _ => unreachable!()
             })
         }

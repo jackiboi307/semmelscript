@@ -1,16 +1,18 @@
-print("hej världen!", 1, 2, 3);
+println("hej världen!");
 
+let x = 0;
 let var = x + (1 - 3^2) * 4;
 
 if var == 1 {
-    print("var is 1");
-
+    println("var is 1");
 } elif var == 2 {
-    print("var is 2");
-
+    println("var is 2");
 } else {
-    print("var is not 1 or 2");
-
+    println("var is not 1 or 2");
 };
 
-print("hej");
+fn hej() {
+    println("hej");
+};
+
+let bool = true;

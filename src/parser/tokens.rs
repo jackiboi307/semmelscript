@@ -8,6 +8,8 @@ pub enum Keyword {
     Else,
     Elif,
     Func,
+    True,
+    False,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
