@@ -264,10 +264,7 @@ impl Parser {
 
             let ch = self.peek()?;
 
-            if EXPR_TERMINATORS.contains(*ch) {
-                break
-
-            } else if OPERATOR_CHARS.contains(*ch) {
+            if OPERATOR_CHARS.contains(*ch) {
                 let op = self.read_operator()?;
 
                 self.skip_whitespace()?;

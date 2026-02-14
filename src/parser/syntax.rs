@@ -11,7 +11,6 @@ pub static LETTERS: Str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 pub static IDENTIFIER_CHARS: Str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 
 pub static STRING_TERMINATORS: Str = "\"'";
-pub static EXPR_TERMINATORS: Str = "),}";
 
 // keywords
 // only lowercase should be used
@@ -62,4 +61,4 @@ pub static OPERATOR_ORDER: &[&[Operator]] = &[
 ];
 
 // should not be used for checking the type of the following token
-pub static OPERATOR_CHARS: Str = "+-*/^%().!=<>&|";
+pub static OPERATOR_CHARS: Str = "+-*/^%.!=<>&|";
