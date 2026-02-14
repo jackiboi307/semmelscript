@@ -202,8 +202,8 @@ impl Parser {
             let value = self.read_expression()?;
             self.expect(")")?;
             value
-        // } else if *ch == '{' {
-        //     self.read_block(true)?
+        } else if *ch == '{' {
+            self.read_block(true)?
         } else {
             return Err(UnexpectedCharacter(*ch).into());
         };
