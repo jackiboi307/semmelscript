@@ -404,12 +404,12 @@ impl Parser {
             loop {
                 nodes.push(self.read_statement()?);
 
-                match self.next()?.clone() {
-                    ';' => {}
-                    ch => {
-                        return Err(UnexpectedCharacter(ch).into())
-                    }
-                }
+                // match self.next()?.clone() {
+                //     ';' => {}
+                //     ch => {
+                //         return Err(UnexpectedCharacter(ch).into())
+                //     }
+                // }
 
                 if self.skip_whitespace().is_err() {
                     break
