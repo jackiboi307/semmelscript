@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 echo building...
-cargo build
+cargo build || exit
 echo -e "\nrunning tests...\n"
 for file in tests/*; do
     echo -e "\033[1m$file\033[0m"
