@@ -14,7 +14,9 @@ pub fn print(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
 pub fn source(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
     let path = get!(runtime, scope, path, String);
     let scope: &mut Scope = unsafe { &mut *scope.parent.unwrap() };
-    execute(runtime, scope, path);
+    let buffer = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("Could not read file {path}: {e}"));
+    execute(runtime, scope, buffer);
     Ok(Object::Null)
 }
 

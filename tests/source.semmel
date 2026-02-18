@@ -1,7 +1,7 @@
-let x = 3;
+let x = 3
 
-println("x has value " + tostring(x));
+println("x has value " + tostring(x))
 
-source("tests/sourced.semmel");
+source("tests/sourced.semmel")
 
-println("x has value " + tostring(x));
+println("x has value " + tostring(x))

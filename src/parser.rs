@@ -202,8 +202,8 @@ impl Parser {
             let value = self.read_expression()?;
             self.expect(")")?;
             value
-        // } else if *ch == '{' {
-        //     self.read_block(true)?
+        } else if *ch == '{' {
+            self.read_block(true)?
         } else {
             return Err(UnexpectedCharacter(*ch).into());
         };
@@ -264,10 +264,7 @@ impl Parser {
 
             let ch = self.peek()?;
 
-            if EXPR_TERMINATORS.contains(*ch) {
-                break
-
-            } else if OPERATOR_CHARS.contains(*ch) {
+            if OPERATOR_CHARS.contains(*ch) {
                 let op = self.read_operator()?;
 
                 self.skip_whitespace()?;
@@ -413,12 +410,12 @@ impl Parser {
             loop {
                 nodes.push(self.read_statement()?);
 
-                match self.next()?.clone() {
-                    ';' => {}
-                    ch => {
-                        return Err(UnexpectedCharacter(ch).into())
-                    }
-                }
+                // match self.next()?.clone() {
+                //     ';' => {}
+                //     ch => {
+                //         return Err(UnexpectedCharacter(ch).into())
+                //     }
+                // }
 
                 if self.skip_whitespace().is_err() {
                     break
