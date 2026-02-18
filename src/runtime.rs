@@ -97,26 +97,35 @@ impl Scope {
         self.names.insert(name.into(), id);
     }
 
-    pub fn update(&mut self, _runtime: &mut Runtime, name: &str, object: Object) -> Result<()> {
-        self.objects.insert(*self.names.get(name)
-            .ok_or(NameError(name.into()))?, object);
-        Ok(())
+    pub fn update(&mut self, runtime: &mut Runtime, name: &str, object: Object) -> Result<()> {
+        if let Some(id) = self.names.get(name) {
+            self.objects.insert(*id, object);
+            Ok(())
+
+        } else if let Some(parent) = self.parent {
+            unsafe {
+                (*parent).update(runtime, name, object)
+            }
+
+        } else {
+            Err(NameError(name.into()).into())
+        }
     }
 
-    pub fn get(&mut self, runtime: &Runtime, ident: &str) -> Result<Object> {
-        if let Some(id) = self.names.get(ident) {
+    pub fn get(&mut self, runtime: &Runtime, name: &str) -> Result<Object> {
+        if let Some(id) = self.names.get(name) {
             Ok(self.objects[*id].clone())
         } else {
             if let Some(parent) = self.parent {
                 unsafe {
-                    (*parent).get(runtime, ident)
+                    (*parent).get(runtime, name)
                 }
             } else {
-                match runtime.globals.names.get(ident) {
+                match runtime.globals.names.get(name) {
                     Some(id) => {
                         Ok(runtime.globals.objects[*id].clone())
                     }
-                    None => Err(NameError(ident.into()).into())
+                    None => Err(NameError(name.into()).into())
                 }
             }
         }
@@ -240,6 +249,7 @@ impl Evaluate for Statement {
             Self::For(ident, sequence, block) => {
                 let sequence = expect_type!(sequence.eval(runtime, scope)?, List);
                 for object in sequence.iter() {
+                    // TODO reuse scope instead
                     let mut scope = Scope::new(Some(scope));
                     scope.define(ident, object.clone());
                     block.eval(runtime, &mut scope)?;

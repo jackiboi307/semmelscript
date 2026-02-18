@@ -24,6 +24,7 @@ quick_error! {
         // TODO create enum for compile time types!
         ExpectedType(typ: &'static str) {}
         InvalidOperator(op: String) {}
+        ExpectedKeyword(keyword: Keyword) {}
         UnexpectedKeyword(keyword: Keyword) {}
         UnexpectedCharacter(ch: char) {}
         EOF {}
@@ -176,6 +177,7 @@ impl Parser {
             OP_AND => And,
             OP_OR => Or,
             OP_SETVALUE => SetValue,
+            OP_RANGE_EXCL => RangeExcl,
             _ => { return Err(InvalidOperator(op.to_string()).into()); }
         })
     }
@@ -360,7 +362,21 @@ impl Parser {
 
     fn read_for(&mut self) -> Result<Node> {
         let ident = self.read_identifier()?;
-        todo!()
+        let _ = self.skip_whitespace();
+
+        match self.read_keyword() {
+            Some(Keyword::In) => {}
+            _ => return Err(ExpectedKeyword(Keyword::In).into())
+        }
+
+        let sequence = self.read_expression()?;
+        let block = self.read_block(true)?;
+
+        Ok(Node::Statement(Statement::For(
+            ident.into(),
+            Box::new(sequence),
+            Box::new(block)
+        )))
     }
 
     fn read_keyword(&mut self) -> Option<Keyword> {
@@ -378,6 +394,8 @@ impl Parser {
                 KW_FUNC => Keyword::Func,
                 KW_TRUE => Keyword::True,
                 KW_FALSE => Keyword::False,
+                KW_FOR => Keyword::For,
+                KW_IN => Keyword::In,
                 _ => unreachable!()
             })
         }

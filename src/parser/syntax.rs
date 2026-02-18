@@ -56,7 +56,6 @@ pub const OP_RANGE_EXCL: Str = "..";
 
 // order of operations
 pub static OPERATOR_ORDER: &[&[Operator]] = &[
-    &[SetValue],
     &[RangeExcl],
     &[Pow],
     &[Mul, Div, Mod],
@@ -64,6 +63,7 @@ pub static OPERATOR_ORDER: &[&[Operator]] = &[
     &[Equal, Inequal, Less, LessEqual, Greater, GreaterEqual],
     &[And],
     &[Or],
+    &[SetValue],
 ];
 
 // should not be used for checking the type of the following token
