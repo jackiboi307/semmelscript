@@ -10,6 +10,8 @@ pub enum Keyword {
     Func,
     True,
     False,
+    For,
+    In,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -34,6 +36,10 @@ pub enum Operator {
     And,
     Or,
 
+    // ranges
+    RangeExcl,
+
+    // misc
     SetValue,
 }
 
@@ -54,6 +60,7 @@ impl Format for Operator {
             Self::GreaterEqual => OP_GREATEREQUAL,
             Self::And => OP_AND,
             Self::Or => OP_OR,
+            Self::RangeExcl => OP_RANGE_EXCL,
             Self::SetValue => OP_SETVALUE,
         })
     }

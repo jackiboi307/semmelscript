@@ -361,6 +361,11 @@ impl Parser {
         Ok(Node::Statement(Statement::If(Box::new(condition), Box::new(block), ext)))
     }
 
+    fn read_for(&mut self) -> Result<Node> {
+        let ident = self.read_identifier()?;
+        todo!()
+    }
+
     fn read_keyword(&mut self) -> Option<Keyword> {
         let potential_keyword = &*self.peek_from_chars(LOWERCASE_LETTERS);
 
@@ -389,6 +394,7 @@ impl Parser {
                 Keyword::Let => return self.read_let(),
                 Keyword::If => return self.read_if(),
                 Keyword::Func => return self.read_func(),
+                Keyword::For => return self.read_for(),
                 _ => { return Err(UnexpectedKeyword(keyword).into()) }
             }
         }

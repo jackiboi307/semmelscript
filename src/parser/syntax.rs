@@ -22,8 +22,10 @@ pub const KW_ELSE: Str = "else";
 pub const KW_FUNC: Str = "fn";
 pub const KW_TRUE: Str = "true";
 pub const KW_FALSE: Str = "false";
+pub const KW_FOR: Str = "for";
+pub const KW_IN: Str = "in";
 pub static KEYWORDS: &[&str] = &[
-    KW_LET, KW_IF, KW_ELIF, KW_ELSE, KW_FUNC, KW_TRUE, KW_FALSE
+    KW_LET, KW_IF, KW_ELIF, KW_ELSE, KW_FUNC, KW_TRUE, KW_FALSE, KW_FOR, KW_IN
 ];
 
 // NOTE useful for naming operators
@@ -50,9 +52,13 @@ pub const OP_OR: Str = "||";
 
 pub const OP_SETVALUE: Str = "=";
 
+pub const OP_RANGE_EXCL: Str = "..";
+// pub const OP_RANGE_INCL = "..=";
+
 // order of operations
 pub static OPERATOR_ORDER: &[&[Operator]] = &[
     &[SetValue],
+    &[RangeExcl],
     &[Pow],
     &[Mul, Div, Mod],
     &[Add, Sub],

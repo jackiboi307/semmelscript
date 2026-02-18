@@ -24,9 +24,11 @@ pub struct BinaryOp {
 
 #[derive(Debug, Clone)]
 pub enum Statement {
+    // TODO replace String with Box<str>
     DefineVariable(String, Box<Node>),
     DefineFunction(String, Vec<Box<str>>, Block),
     If(Box<Node>, Box<Node>, Option<Box<Node>>),
+    For(Box<str>, Box<Node>, Box<Node>),
 }
 
 #[derive(Debug, Clone)]
@@ -118,6 +120,9 @@ impl Format for Statement {
                     fmt.push_str(&*format!(" else {}", ext.format(indent)));
                 }
                 fmt
+            }
+            Self::For(ident, sequence, block) => {
+                format!("for {ident} in {} {};", sequence.format(indent), block.format(indent + 1))
             }
         }
     }

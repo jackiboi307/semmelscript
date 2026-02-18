@@ -52,6 +52,7 @@ pub enum Type {
     Integer,
     Boolean,
     Function,
+    List,
 }
 
 #[derive(Debug, Clone)]
@@ -64,6 +65,7 @@ pub enum Object {
         func: Box<Function>,
         args: Vec<Box<str>>,
     },
+    List(Vec<Object>),
 }
 
 impl Runtime {
@@ -235,6 +237,15 @@ impl Evaluate for Statement {
 
                 Ok(Object::Null)
             }
+            Self::For(ident, sequence, block) => {
+                let sequence = expect_type!(sequence.eval(runtime, scope)?, List);
+                for object in sequence.iter() {
+                    let mut scope = Scope::new(Some(scope));
+                    scope.define(ident, object.clone());
+                    block.eval(runtime, &mut scope)?;
+                }
+                Ok(Object::Null)
+            }
         }
     }
 }
@@ -303,6 +314,12 @@ impl Evaluate for BinaryOp {
                     Or => a || b,
                     _ => unreachable!()
                 })
+            }
+
+            RangeExcl => {
+                let a = expect_type!(self.a.eval(runtime, scope)?, Integer);
+                let b = expect_type!(self.b.eval(runtime, scope)?, Integer);
+                Object::List((a..b).map(|i| Object::Integer(i)).collect())
             }
 
             SetValue => {
