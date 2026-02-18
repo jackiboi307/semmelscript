@@ -9,6 +9,8 @@ use node::*;
 pub mod tokens;
 use tokens::*;
 
+use quick_error::quick_error;
+
 pub struct Parser {
     chars: Box<[char]>,
     i: usize,

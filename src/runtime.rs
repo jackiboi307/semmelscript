@@ -6,6 +6,8 @@ type IntegerType = i32;
 
 // TODO replace some 'name' with 'ident'
 
+use quick_error::quick_error;
+
 quick_error! {
     #[derive(Debug)]
     pub enum RuntimeError {
