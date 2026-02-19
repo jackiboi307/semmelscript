@@ -193,6 +193,11 @@ impl Evaluate for Node {
             Self::String(string) => Ok(Object::String(string.to_string())),
             Self::Integer(integer) => Ok(Object::Integer(*integer)),
             Self::Boolean(boolean) => Ok(Object::Boolean(*boolean)),
+            Self::List(list) => {
+                let result: Result<Vec<Object>> = list.iter()
+                    .map(|n| n.eval(runtime, scope)).collect();
+                Ok(Object::List(result?))
+            }
         }
     }
 }

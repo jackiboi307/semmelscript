@@ -22,10 +22,12 @@ pub fn source(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
 }
 
 pub fn tostring(runtime: &mut Runtime, scope: &mut Scope) -> Result<Object> {
-    Ok(Object::String(match scope.get(runtime, "value").unwrap() {
+    // TODO use the same formatting as parser::node::Node
+    let obj = scope.get(runtime, "value")?;
+    Ok(Object::String(match obj {
         Object::String(string) => string,
         Object::Integer(integer) => integer.to_string(),
-        _ => unimplemented!()
+        _ => format!("{obj:?}")
     }))
 }
 

@@ -13,6 +13,7 @@ pub enum Node {
     String(Box<str>),
     Integer(i32),
     Boolean(bool),
+    List(Vec<Node>),
 }
 
 #[derive(Debug, Clone)]
@@ -85,6 +86,10 @@ impl Format for Node {
             Self::ParenArgs(root, args) => {
                 let args_fmt: Vec<_> = args.iter().map(|node| node.format(indent)).collect();
                 format!("{}({})", root.format(indent), args_fmt.join(", "))
+            }
+            Self::List(args) => {
+                let args_fmt: Vec<_> = args.iter().map(|node| node.format(indent)).collect();
+                format!("[{}]", args_fmt.join(", "))
             }
             Self::BinaryOp(bop) => format!("({} {} {})",
                 bop.a.format(indent),

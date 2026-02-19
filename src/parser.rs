@@ -208,6 +208,9 @@ impl Parser {
             value
         } else if *ch == '{' {
             self.read_block(true)?
+        } else if *ch == '[' {
+            self.step();
+            Node::List(self.read_args(']')?)
         } else {
             return Err(UnexpectedCharacter(*ch).into());
         };
@@ -219,7 +222,7 @@ impl Parser {
         if let Ok(ch) = self.peek() { match ch {
             '(' => {
                 self.step();
-                return Ok(Node::ParenArgs(Box::new(value), self.read_args()?));
+                return Ok(Node::ParenArgs(Box::new(value), self.read_args(')')?));
             }
             _ => {}
         }}
@@ -227,11 +230,11 @@ impl Parser {
         Ok(value)
     }
 
-    fn read_args(&mut self) -> Result<Vec<Node>> {
+    fn read_args(&mut self, term: char) -> Result<Vec<Node>> {
         let _ = self.skip_whitespace();
         let mut args = Vec::new();
 
-        if *self.peek()? == ')' {
+        if *self.peek()? == term {
             self.step();
             let _  = self.skip_whitespace();
             return Ok(args);
@@ -241,14 +244,13 @@ impl Parser {
             let expr = self.read_expression()?;
             args.push(expr);
 
-            let ch = self.next()?;
-            match ch {
-                ')' => {
-                    let _  = self.skip_whitespace();
-                    return Ok(args);
-                }
-                ',' => {}
-                _ => { return Err(ExpectedTokens(&[",", ")"], ch.to_string()).into()) }
+            let ch = *self.next()?;
+
+            if ch == term {
+                let _  = self.skip_whitespace();
+                return Ok(args);
+            } else if ch != ',' {
+                return Err(ExpectedTokens(&[",", ")"], ch.to_string()).into());
             }
 
             let _ = self.skip_whitespace();
@@ -331,7 +333,7 @@ impl Parser {
         let _ = self.skip_whitespace();
         self.expect("(")?;
 
-        let args = self.read_args()?;
+        let args = self.read_args(')')?;
         let args: Vec<Box<str>> = args.iter().map(
             |arg| ident_to_str(arg).unwrap().into() // TODO fix
         ).collect();
