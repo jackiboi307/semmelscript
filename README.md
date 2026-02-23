@@ -4,4 +4,4 @@ This is a work-in-progress scripting language written in Rust, with a Rust-like 
 
 You can test it by running `./run_tests.sh`
 
-![logo](/logo.jpg?raw=true)
+![logo](/logo.png?raw=true)
